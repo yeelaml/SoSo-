@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>獨居生存大冒險 | Living Alone Adventure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .pixel-font { font-family: 'Press Start 2P', cursive; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #306230; }
+        ::-webkit-scrollbar-thumb { background: #0f380f; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-[#222]">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Lucide Icon Component Wrapper
+        const Icon = ({ name, size = 20, className = "", fill = "none" }) => {
+            useEffect(() => {
+                lucide.createIcons();
+            }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className} fill={fill}></i>;
+        };
+
+        const App = () => {
+            const INITIAL_INCOME = 18000;
+            const [gameState, setGameState] = useState('intro');
+            const [editingId, setEditingId] = useState(null);
+            const [tempValue, setTempValue] = useState("");
+            const [expenses, setExpenses] = useState({
+                rent: 8500, food: 4000, utilities: 1000, transport: 1200, social: 2000, medical: 500, home: 1500
+            });
+            const [message, setMessage] = useState("歡迎挑戰獨居生活！");
+
+            const totalExpense = Object.values(expenses).reduce((a, b) => a + b, 0);
+            const balance = INITIAL_INCOME - totalExpense;
+            const hpPercent = Math.max(0, Math.min(100, (balance / INITIAL_INCOME) * 200));
+
+            const getRank = () => {
+                const commonMsg = "其實理財和儲錢這回事，學校沒教、以前沒學過是非常正常的。重點是我們現在開始有了「計劃」的意識。儲錢是為了讓我們在未來有更多「選擇的自由」。我們可以一起研究、一起調整，共同成長。";
+                if (balance < 0) return { name: "赤字冒險者", color: "text-red-700", icon: "skull", msg: `開支大大超出了預算。別灰心，這正是挑戰所在！${commonMsg}` };
+                if (balance < 1500) return { name: "極限生存者", color: "text-orange-700", icon: "zap", msg: `雖然剛好夠用，但面對意外的防禦力還不夠。${commonMsg}` };
+                if (balance < 5000) return { name: "穩健平民", color: "text-blue-700", icon: "users", msg: `你已經掌握了基本的平衡！如果能再多儲一點會更安心。${commonMsg}` };
+                return { name: "理財大師", color: "text-yellow-700", icon: "trophy", msg: `太棒了！你非常有理財天賦。${commonMsg}` };
+            };
+
+            const rank = getRank();
+
+            const handleUpdate = (key, delta) => {
+                setExpenses(prev => ({ ...prev, [key]: Math.max(0, prev[key] + delta) }));
+            };
+
+            useEffect(() => {
+                if (balance < 0) setMessage("超支了！嘗試調整一下各項比例吧。");
+                else if (expenses.rent > 10000) setMessage("租金比例較高，會讓儲蓄變得很難喔。");
+                else setMessage("每一步微小的調整，都是成長的開始。");
+            }, [expenses, balance]);
+
+            const IntroScreen = () => (
+                <div className="flex flex-col items-center justify-center h-full text-[#0f380f] space-y-8 animate-in zoom-in duration-500 p-2">
+                    <div className="text-center">
+                        <h1 className="text-3xl sm:text-4xl font-black tracking-tighter border-b-8 border-[#0f380f] inline-block mb-2">獨居大冒險</h1>
+                        <p className="text-[10px] sm:text-xs font-bold opacity-70 uppercase tracking-widest italic">Learn & Grow Together</p>
+                    </div>
+                    <div className="bg-[#9bbc0f] p-6 border-4 border-[#0f380f] rounded-xl w-full max-w-xs shadow-md">
+                        <div className="text-center space-y-3">
+                            <p className="text-lg font-black underline">【 冒險準備 】</p>
+                            <div className="space-y-1 font-bold text-sm">
+                                <p>職業：社會新鮮人</p>
+                                <p>初始預算：$18,000 / 月</p>
+                                <p className="mt-2 text-[10px] leading-tight opacity-80 italic">「理財不是天賦，而是可以修煉的技能。」</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button onClick={() => setGameState('play')} className="flex items-center gap-3 bg-[#0f380f] text-[#8bac0f] px-10 py-4 rounded-full font-black text-xl hover:scale-105 transition-transform active:scale-95 shadow-lg">
+                        開始計劃
+                    </button>
+                </div>
+            );
+
+            const ResultScreen = () => (
+                <div className="flex flex-col h-full text-[#0f380f] animate-in slide-in-from-bottom duration-700 p-2">
+                    <div className="text-center mb-6">
+                        <h2 className="text-2xl font-black border-b-4 border-[#0f380f] inline-block pb-1">冒險總結</h2>
+                    </div>
+                    <div className="flex-grow space-y-4 overflow-y-auto pr-1">
+                        <div className="flex flex-col items-center p-5 bg-[#9bbc0f] border-4 border-[#0f380f] rounded-2xl shadow-sm text-center">
+                           <Icon name={rank.icon} size={32} className={`mb-2 ${rank.color}`} />
+                           <p className="text-[10px] font-black opacity-70">預演評價：</p>
+                           <h3 className={`text-2xl font-black ${rank.color}`}>{rank.name}</h3>
+                        </div>
+                        <div className="bg-[#306230] bg-opacity-10 p-5 rounded-xl border-2 border-[#306230] leading-relaxed">
+                            <p className="text-xs font-bold text-justify">{rank.msg}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-center">
+                            <div className="p-3 border-2 border-[#0f380f] rounded-lg bg-[#9bbc0f] bg-opacity-30">
+                                <p className="text-[10px] font-black opacity-60 italic">預計儲蓄</p>
+                                <p className="text-lg font-black">${balance.toLocaleString()}</p>
+                            </div>
+                            <div className="p-3 border-2 border-[#0f380f] rounded-lg bg-[#9bbc0f] bg-opacity-30">
+                                <p className="text-[10px] font-black opacity-60 italic">狀態</p>
+                                <p className="text-lg font-black uppercase">{balance > 0 ? '穩定' : '赤字'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button onClick={() => setGameState('play')} className="mt-6 flex items-center justify-center gap-2 bg-[#0f380f] text-[#8bac0f] py-4 rounded-xl font-black text-lg hover:bg-[#306230] transition-colors shadow-lg active:scale-95">
+                        重新優化
+                    </button>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-2 sm:p-4">
+                    <div className="w-full max-w-2xl bg-[#555] p-4 sm:p-10 rounded-[2.5rem] sm:rounded-[4rem] shadow-2xl border-b-[8px] sm:border-b-[12px] border-black relative">
+                        <div className="bg-[#8bac0f] p-4 sm:p-6 rounded-xl sm:rounded-2xl border-4 sm:border-8 border-[#0f380f] min-h-[580px] sm:min-h-[640px] flex flex-col shadow-inner relative overflow-hidden">
+                            {gameState === 'intro' && <IntroScreen />}
+                            {gameState === 'result' && <ResultScreen />}
+                            {gameState === 'play' && (
+                                <div className="flex flex-col h-full animate-in fade-in">
+                                    <div className="flex justify-between items-end border-b-4 border-[#0f380f] pb-4 mb-6">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2 font-black text-[#0f380f] text-xs sm:text-sm">
+                                                <Icon name="heart" size={18} fill={balance < 0 ? "none" : "#0f380f"} /> 
+                                                <span>CASH HP</span>
+                                            </div>
+                                            <div className="w-32 sm:w-48 bg-[#306230] h-5 sm:h-6 rounded border-2 border-[#0f380f] overflow-hidden p-1 shadow-inner">
+                                                <div className={`h-full transition-all duration-300 ${balance < 0 ? 'bg-red-500' : 'bg-[#9bbc0f]'}`} style={{ width: `${hpPercent}%` }} />
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-[8px] sm:text-[10px] text-[#0f380f] opacity-70 font-black">共同成長模式</div>
+                                            <div className={`text-xs sm:text-lg font-black ${rank.color}`}>{rank.name}</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex-grow overflow-y-auto pr-1">
+                                        <div className="bg-[#9bbc0f] p-3 rounded-xl mb-4 border-2 border-[#306230] text-xs sm:text-sm font-black italic shadow-sm leading-tight text-[#0f380f]">
+                                            「 {message} 」
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {[
+                                                { id: 'rent', label: '住房租金', icon: 'home' },
+                                                { id: 'food', label: '伙食預算', icon: 'utensils' },
+                                                { id: 'transport', label: '通勤開支', icon: 'bus' },
+                                                { id: 'social', label: '社交娛樂', icon: 'gift' },
+                                                { id: 'medical', label: '醫療預備', icon: 'activity' },
+                                                { id: 'home', label: '給予家用', icon: 'heart' },
+                                            ].map((item) => (
+                                                <div key={item.id} className="bg-[#306230] bg-opacity-5 p-3 rounded-xl border-2 border-[#306230] hover:bg-[#9bbc0f] transition-colors">
+                                                    <div className="flex items-center gap-2 text-[#0f380f] mb-2">
+                                                        <Icon name={item.icon} size={16} />
+                                                        <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">{item.label}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between bg-[#9bbc0f] bg-opacity-50 p-2 rounded-lg border border-[#306230]">
+                                                        <button onClick={() => handleUpdate(item.id, -500)} className="w-8 h-8 bg-[#0f380f] text-[#8bac0f] rounded-lg font-black shadow-md active:translate-y-0.5">-</button>
+                                                        <span className="text-base sm:text-lg font-black">${expenses[item.id].toLocaleString()}</span>
+                                                        <button onClick={() => handleUpdate(item.id, 500)} className="w-8 h-8 bg-[#0f380f] text-[#8bac0f] rounded-lg font-black shadow-md active:translate-y-0.5">+</button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="mt-6 pt-4 border-t-4 border-[#0f380f] flex justify-between items-center text-[#0f380f]">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black italic underline uppercase">每月儲蓄:</span>
+                                            <span className={`text-2xl sm:text-3xl font-black ${balance < 0 ? 'text-red-700 animate-pulse' : ''}`}>${balance.toLocaleString()}</span>
+                                        </div>
+                                        <button onClick={() => setGameState('result')} className="bg-[#0f380f] text-[#8bac0f] px-6 py-4 rounded-xl font-black text-lg hover:bg-[#306230] shadow-xl active:scale-95 animate-pulse">完成計劃</button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {/* Decorations */}
+                        <div className="mt-8 flex justify-between items-center px-4 sm:px-10 opacity-60">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#333] rounded-full border border-white/5 shadow-xl relative flex items-center justify-center">
+                                <div className="absolute w-full h-4 bg-[#111] rounded-full"></div>
+                                <div className="absolute w-4 h-full bg-[#111] rounded-full"></div>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#800] rounded-full border-b-4 border-black"></div>
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#800] rounded-full border-b-4 border-black"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
